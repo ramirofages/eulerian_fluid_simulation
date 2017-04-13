@@ -1,0 +1,21 @@
+﻿#pragma kernel CSMain
+
+
+Texture2D<float4> pressureR;
+RWTexture2D<float4> pressureW;
+
+[numthreads(32,32,1)]
+void CSMain (uint3 id : SV_DispatchThreadID)
+{
+    float2 center_pressure_div   = pressureR[id.xy].xy;
+
+    float center = center_pressure_div.x;
+    float up       = pressureR[id.xy + uint2( 0,1    )].x;
+    float down     = pressureR[id.xy + uint2( 0,-1   )].x;
+    float left     = pressureR[id.xy + uint2( 1,0    )].x;
+    float right    = pressureR[id.xy + uint2(-1,0    )].x;
+
+    float divergence = center_pressure_div.y;
+    float pressure = (up + down + left + right - divergence) / 4.0;
+    pressureW[id.xy] = float4(pressure, divergence, 0,0);
+}

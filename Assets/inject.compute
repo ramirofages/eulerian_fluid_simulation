@@ -1,0 +1,28 @@
+﻿#pragma kernel inject_density
+#pragma kernel inject_velocity
+
+
+RWTexture2D<float4> textureRW;
+
+SamplerState LinearClamp;
+
+#define GRID_SIZE 512.0
+
+[numthreads(32,32,1)]
+void inject_density (uint3 id : SV_DispatchThreadID)
+{
+    float inv_grid_size     = 1.0/GRID_SIZE;
+    float half_pixel_size   = inv_grid_size/2.0;
+
+
+    float2 pos = id.xy * inv_grid_size + half_pixel_size;
+    float density = 1 - distance(pos,float2(0.5, 0.5))/0.1;
+
+    textureRW[id.xy] = float4(density,0,0,0);
+}
+
+[numthreads(32,32,1)]
+void inject_velocity (uint3 id : SV_DispatchThreadID)
+{
+    textureRW[id.xy] = float4(0,1,0,0);
+}
