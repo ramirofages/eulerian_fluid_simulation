@@ -1,0 +1,29 @@
+﻿#pragma kernel CSMain
+
+
+Texture2D<float4> pressureR;
+Texture2D<float4> source_velocity;
+RWTexture2D<float4> velocityRW;
+SamplerState LinearClamp;
+
+
+#define GRID_SIZE 512.0
+
+[numthreads(32,32,1)]
+void CSMain (uint3 id : SV_DispatchThreadID)
+{
+    float inv_grid_size     = 1.0/GRID_SIZE;
+    float half_pixel_size   = inv_grid_size/2.0;
+    float2 pos = id.xy * inv_grid_size + half_pixel_size;
+
+    float up       = pressureR[id.xy + uint2( 0,1    )].x;
+    float down     = pressureR[id.xy + uint2( 0,-1   )].x;
+    float left     = pressureR[id.xy + uint2( 1,0    )].x;
+    float right    = pressureR[id.xy + uint2(-1,0    )].x;
+
+    float2 velocity = source_velocity.SampleLevel(LinearClamp, pos, 0 ).xy;
+
+    
+    float2 new_vel = velocity - float2(right - left, up - down) * half_pixel_size;
+    velocityRW[id.xy] = float4(new_vel, 0,0);
+}

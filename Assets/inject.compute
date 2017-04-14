@@ -1,10 +1,16 @@
 ﻿#pragma kernel inject_density
 #pragma kernel inject_velocity
-
+#pragma kernel add_density
+#pragma kernel add_velocity
 
 RWTexture2D<float4> textureRW;
 
+Texture2D<float4> force_tex;
+
 SamplerState LinearClamp;
+float2 old_mouse_pos;
+float2 mouse_pos;
+float dt;
 
 #define GRID_SIZE 512.0
 
@@ -24,5 +30,42 @@ void inject_density (uint3 id : SV_DispatchThreadID)
 [numthreads(32,32,1)]
 void inject_velocity (uint3 id : SV_DispatchThreadID)
 {
-    textureRW[id.xy] = float4(0,1,0,0);
+    float inv_grid_size     = 1.0/GRID_SIZE;
+    float half_pixel_size   = inv_grid_size/2.0;
+    float2 pos = id.xy * inv_grid_size + half_pixel_size;
+
+    float vel_y = force_tex.SampleLevel(LinearClamp, pos,0).x;
+    textureRW[id.xy] = float4(0, vel_y, 0, 0);
+    //textureRW[id.xy] = float4(0,0,0,0);
+}
+
+
+[numthreads(32,32,1)]
+void add_density (uint3 id : SV_DispatchThreadID)
+{
+
+    float inv_grid_size     = 1.0/GRID_SIZE;
+    float half_pixel_size   = inv_grid_size/2.0;
+
+    float2 pos = id.xy * inv_grid_size + half_pixel_size;
+    float density = 1 - distance(pos,mouse_pos)/0.1;
+
+    float current_density = textureRW[id.xy].x;
+    textureRW[id.xy] = float4(current_density + saturate(density * dt * 3),0,0,0);
+}
+
+[numthreads(32,32,1)]
+void add_velocity (uint3 id : SV_DispatchThreadID)
+{
+
+    float inv_grid_size     = 1.0/GRID_SIZE;
+    float half_pixel_size   = inv_grid_size/2.0;
+
+    float2 pos = id.xy * inv_grid_size + half_pixel_size;
+
+    float2 current_velocity = textureRW[id.xy].xy;
+    float vel_x = 0;
+    float vel_y = force_tex.SampleLevel(LinearClamp, pos,0).x;
+    float2 new_vel = float2(vel_x, vel_y);
+    textureRW[id.xy] = float4(current_velocity + new_vel *  dt, 0, 0);
 }

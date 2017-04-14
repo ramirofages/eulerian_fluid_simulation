@@ -4,7 +4,7 @@
 Texture2D<float4> velocityR;
 RWTexture2D<float4> pressureW;
 
-#define GRID_SIZE 512.0
+#define GRID_SIZE 512
 
 
 [numthreads(32,32,1)]
@@ -15,10 +15,19 @@ void CSMain (uint3 id : SV_DispatchThreadID)
     float inv_grid_size     = 1.0/GRID_SIZE;
     float half_pixel_size   = inv_grid_size/2.0;
 
-    float2 up       = velocityR[id.xy + uint2( 0,1    )].xy;
-    float2 down     = velocityR[id.xy + uint2( 0,-1   )].xy;
-    float2 left     = velocityR[id.xy + uint2( 1,0    )].xy;
-    float2 right    = velocityR[id.xy + uint2(-1,0    )].xy;
+    float2 up       = velocityR[id.xy + uint2( 0, 1    )].xy;
+    float2 down     = velocityR[id.xy + uint2( 0,-1    )].xy;
+    float2 left     = velocityR[id.xy + uint2( 1, 0    )].xy;
+    float2 right    = velocityR[id.xy + uint2(-1, 0    )].xy;
+
+    if((id.x + 1)> GRID_SIZE-1)
+        right = float2(0,0);
+    if((id.x - 1)< 0)
+        left = float2(0,0);
+    if((id.y + 1)> GRID_SIZE-1)
+        up = float2(0,0);
+    if((id.y - 1)< 0)
+        down = float2(0,0);
 
     pressureW[id.xy] = float4(0, ((right.x - left.x) + (up.y - down.y)) * half_pixel_size, 0, 0);
 

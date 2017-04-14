@@ -46,15 +46,13 @@
 				return o;
 			}
 			
-			fixed4 frag (v2f i) : SV_Target
+			fixed3 frag (v2f i) : SV_Target
 			{
-//				float2 screen_coord = i.screen * 0.5 + 0.5;
-//                float density = 1 - distance(i.uv,float2(0.5, 0.5))/0.1;
-//
-//                return fixed4(density, density, density,1);
-//				return fixed4(screen_coord.x,screen_coord.y,0,1);
-                float density = tex2D(_Density, i.uv).r;
-                return fixed4(density, density, density,1);
+//                float density = tex2D(_Density, i.uv).r;
+//                return fixed3(density, density, density);
+
+                float2 density = tex2D(_Density, i.uv).rg;
+                return fixed3(density,0);
 			}
 			ENDCG
 		}

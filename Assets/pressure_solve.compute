@@ -4,6 +4,9 @@
 Texture2D<float4> pressureR;
 RWTexture2D<float4> pressureW;
 
+
+#define GRID_SIZE 512.0
+
 [numthreads(32,32,1)]
 void CSMain (uint3 id : SV_DispatchThreadID)
 {
@@ -15,7 +18,14 @@ void CSMain (uint3 id : SV_DispatchThreadID)
     float left     = pressureR[id.xy + uint2( 1,0    )].x;
     float right    = pressureR[id.xy + uint2(-1,0    )].x;
 
+    float inv_grid_size     = 1.0/GRID_SIZE;
+    float alpha = -(inv_grid_size * inv_grid_size);
+
+    float beta = 0.25;
+
     float divergence = center_pressure_div.y;
-    float pressure = (up + down + left + right - divergence) / 4.0;
+
+    float pressure = (up + down + left + right + divergence * alpha) * beta;
+
     pressureW[id.xy] = float4(pressure, divergence, 0,0);
 }
