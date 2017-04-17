@@ -185,6 +185,7 @@ public class FluidSim : MonoBehaviour {
 //        AdvectDensity();
 //        AddDensity();
         CalculateDivergence();
+        debugger.UpdateGrid(divergence_tex,true);
 
         SolvePressure();
 
@@ -193,16 +194,15 @@ public class FluidSim : MonoBehaviour {
 //        else
 //            debugger.UpdateGrid(pressure_tex_1,true);
 
-//        debugger.UpdateGrid(pressure_tex_0,true);
 
         
         GradientSubstract();
 
 
-        if(using_velocity_0)
-            debugger.UpdateGrid(velocity_tex_0,false);
-        else
-            debugger.UpdateGrid(velocity_tex_1,false); 
+//        if(using_velocity_0)
+//            debugger.UpdateGrid(velocity_tex_0,false);
+//        else
+//            debugger.UpdateGrid(velocity_tex_1,false); 
         
 
 

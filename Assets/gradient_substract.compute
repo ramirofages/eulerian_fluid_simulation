@@ -13,9 +13,9 @@ void CSMain (uint3 id : SV_DispatchThreadID)
 {
 
     float up       = pressureR[id.xy + uint2( 0,1    )].x;
-    float down     = pressureR[id.xy + uint2( 0,-1   )].x;
-    float left     = pressureR[id.xy + uint2( 1,0    )].x;
-    float right    = pressureR[id.xy + uint2(-1,0    )].x;
+    float down     = pressureR[id.xy - uint2( 0,1   )].x;
+    float left     = pressureR[id.xy - uint2( 1,0    )].x;
+    float right    = pressureR[id.xy + uint2( 1,0    )].x;
     float center   = pressureR[id.xy].x;
 
     if((id.x + 1)> GRID_SIZE-1)

@@ -17,8 +17,8 @@ void CSMain (uint3 id : SV_DispatchThreadID)
 
     float up       = pressureR[uint2(id.x, min(id.y + 1, GRID_SIZE -1))].x; 
     float down     = pressureR[uint2(id.x, max(id.y - 1, 1))].x;
-    float left     = pressureR[uint2(max(id.x -1, 1), id.y)].x;
-    float right    = pressureR[uint2(min(id.x +1, GRID_SIZE -1), id.y)].x;
+    float left     = pressureR[uint2(max(id.x -1, 1)            , id.y)].x;
+    float right    = pressureR[uint2(min(id.x +1, GRID_SIZE -1) , id.y)].x;
 
 
 
