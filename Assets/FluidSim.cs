@@ -81,7 +81,7 @@ public class FluidSim : MonoBehaviour {
         pressure_compute.SetTexture(pressure_kernel,"pressureW", pressure_tex_1);
         pressure_compute.SetTexture(pressure_kernel,"divergenceR", divergence_tex);
 
-        for(int i=0; i< 10; i++)
+        for(int i=0; i< 40; i++)
         {
             pressure_compute.Dispatch(pressure_kernel, dispatch_group_count, dispatch_group_count,1);
             using_pressure_0 = !using_pressure_0;
@@ -185,7 +185,7 @@ public class FluidSim : MonoBehaviour {
 //        AdvectDensity();
 //        AddDensity();
         CalculateDivergence();
-        debugger.UpdateGrid(divergence_tex,true);
+//        debugger.UpdateGrid(divergence_tex,true);
 
         SolvePressure();
 
@@ -199,10 +199,10 @@ public class FluidSim : MonoBehaviour {
         GradientSubstract();
 
 
-//        if(using_velocity_0)
-//            debugger.UpdateGrid(velocity_tex_0,false);
-//        else
-//            debugger.UpdateGrid(velocity_tex_1,false); 
+        if(using_velocity_0)
+            debugger.UpdateGrid(velocity_tex_0,true);
+        else
+            debugger.UpdateGrid(velocity_tex_1,true); 
         
 
 

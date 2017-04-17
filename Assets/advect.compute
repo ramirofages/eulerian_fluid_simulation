@@ -13,11 +13,17 @@ NUMTHREADS
 void CSMain (uint3 id : SV_DispatchThreadID)
 {
 
+    if(is_boundary(id.xy))
+    {
+        target[id.xy] = float4(0,0,0,0);
+        return;
+    }
+
 
     float2 velocity = source[id.xy].xy;
 
 
     float2 backwards_pos = id.xy - velocity * delta_time;
 	float2 new_vel = source.SampleLevel(LinearClamp, (backwards_pos+0.5)/GRID_SIZE,0).xy;
-    target[id.xy] = float4(new_vel,0,0);
+    target[id.xy] = float4(new_vel * 0.999,0,0);
 }

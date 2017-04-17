@@ -22,6 +22,7 @@ void CSMain (uint3 id : SV_DispatchThreadID)
 
 
 
+
     float alpha = -(CELL_SIZE * CELL_SIZE);
     alpha = -1;
     float beta = 0.25;
