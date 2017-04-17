@@ -1,31 +1,34 @@
 ﻿#pragma kernel CSMain
-
+#include "fluid_utilities.cginc"
 
 Texture2D<float4> pressureR;
+Texture2D<float4> divergenceR;
 RWTexture2D<float4> pressureW;
 
 
-#define GRID_SIZE 512.0
 
-[numthreads(32,32,1)]
+
+
+NUMTHREADS
 void CSMain (uint3 id : SV_DispatchThreadID)
 {
-    float2 center_pressure_div   = pressureR[id.xy].xy;
 
-    float center = center_pressure_div.x;
-    float up       = pressureR[id.xy + uint2( 0,1    )].x;
-    float down     = pressureR[id.xy + uint2( 0,-1   )].x;
-    float left     = pressureR[id.xy + uint2( 1,0    )].x;
-    float right    = pressureR[id.xy + uint2(-1,0    )].x;
 
-    float inv_grid_size     = 1.0/GRID_SIZE;
-    float alpha = -(inv_grid_size * inv_grid_size);
 
+    float up       = pressureR[uint2(id.x, min(id.y + 1, GRID_SIZE -1))].x; 
+    float down     = pressureR[uint2(id.x, max(id.y - 1, 1))].x;
+    float left     = pressureR[uint2(max(id.x -1, 1), id.y)].x;
+    float right    = pressureR[uint2(min(id.x +1, GRID_SIZE -1), id.y)].x;
+
+
+
+    float alpha = -(CELL_SIZE * CELL_SIZE);
+    alpha = -1;
     float beta = 0.25;
 
-    float divergence = center_pressure_div.y;
+    float divergence = divergenceR[id.xy].x;
 
-    float pressure = (up + down + left + right + divergence * alpha) * beta;
+    float pressure = (up + down + left + right + (divergence * alpha)) * beta;
 
-    pressureW[id.xy] = float4(pressure, divergence, 0,0);
+    pressureW[id.xy] = float4(pressure, 0, 0,0);
 }
