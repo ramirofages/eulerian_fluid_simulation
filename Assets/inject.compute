@@ -2,6 +2,8 @@
 #pragma kernel inject_velocity
 #pragma kernel add_density
 #pragma kernel add_velocity
+#pragma kernel add_temperature
+
 
 
 #include "fluid_utilities.cginc"
@@ -50,6 +52,17 @@ void add_density (uint3 id : SV_DispatchThreadID)
     float current_density = textureRW[id.xy].x;
     textureRW[id.xy] = float4(current_density + saturate(density * dt * 3),0,0,0);
 }
+
+NUMTHREADS
+void add_temperature (uint3 id : SV_DispatchThreadID)
+{
+
+    float2 pos = ID_TO_UV(id.xy) * 2 - 1;
+    float temperature = saturate(1-pow(length(pos)*4,2));
+    float current_temperature = textureRW[id.xy].x;
+    textureRW[id.xy] = float4(current_temperature + temperature * dt * 0.2,0,0,0);
+}
+
 
 NUMTHREADS
 void add_velocity (uint3 id : SV_DispatchThreadID)

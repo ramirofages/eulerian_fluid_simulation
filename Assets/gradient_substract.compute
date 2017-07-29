@@ -30,6 +30,6 @@ void CSMain (uint3 id : SV_DispatchThreadID)
 
     float2 velocity = source_velocity[id.xy].xy;
 
-    float2 new_vel = velocity - float2(right - left, up - down) * GRADIENT_SCALE;
+    float2 new_vel = velocity - float2(right - left, up - down) * 0.5;
     velocityRW[id.xy] = float4(new_vel, 0,0);
 }

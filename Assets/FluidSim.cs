@@ -22,6 +22,10 @@ public class FluidSim : MonoBehaviour {
     int gradient_substract_kernel;
     int add_velocity_kernel;
 
+    int add_temperature_kernel;
+    int calculate_buoyancy_kernel;
+
+
     public Material density_material;
     RenderTexture density_tex_0;
     RenderTexture density_tex_1;
@@ -34,7 +38,10 @@ public class FluidSim : MonoBehaviour {
 
     RenderTexture divergence_tex;
 
-    bool using_density_0;
+    RenderTexture temperature_tex_0;
+    RenderTexture temperature_tex_1;
+
+
     int texture_resolution = 32;
     int dispatch_group_count = 1;
 
@@ -42,10 +49,11 @@ public class FluidSim : MonoBehaviour {
     void Start()
     {
         SetupDensityTex();
+        SetupTemperatureTex();
         SetupVelocityTex();
         SetupPressureTex();
         SetupKernels();
-
+       
 
         inject_compute.SetTexture(inject_velocity_kernel,"force_tex", force_field_texture);
  
@@ -66,106 +74,58 @@ public class FluidSim : MonoBehaviour {
 //        pressure_compute.SetTexture(pressure_kernel,"pressureW", pressure_tex_1);
 //        SolvePressure();
 
-        using_density_0 = false;
-        using_velocity_0 = true;
 
     }
 
-    bool using_velocity_0;
 
-    bool using_pressure_0 = false;
     void SolvePressure()
     {
-        using_pressure_0 = true;
-        pressure_compute.SetTexture(pressure_kernel,"pressureR", pressure_tex_0);
-        pressure_compute.SetTexture(pressure_kernel,"pressureW", pressure_tex_1);
+
         pressure_compute.SetTexture(pressure_kernel,"divergenceR", divergence_tex);
 
         for(int i=0; i< 40; i++)
         {
-            pressure_compute.Dispatch(pressure_kernel, dispatch_group_count, dispatch_group_count,1);
-            using_pressure_0 = !using_pressure_0;
-            SwapPressure(using_pressure_0);
-        }
-
-    }
-    void SwapPressure(bool contents_on_pressure_0)
-    {
-        if(contents_on_pressure_0)
-        {
             pressure_compute.SetTexture(pressure_kernel,"pressureR", pressure_tex_0);
             pressure_compute.SetTexture(pressure_kernel,"pressureW", pressure_tex_1);
+            pressure_compute.Dispatch(pressure_kernel, dispatch_group_count, dispatch_group_count,1);
+            Swap(ref pressure_tex_0, ref pressure_tex_1);
         }
-        else
-        {
-            pressure_compute.SetTexture(pressure_kernel,"pressureR", pressure_tex_1);
-            pressure_compute.SetTexture(pressure_kernel,"pressureW", pressure_tex_0);
-        }
+
     }
+
     void GradientSubstract()
     {
-        if(using_velocity_0)
-        {
-            gradient_substract_compute.SetTexture(gradient_substract_kernel, "source_velocity", velocity_tex_0);
-            gradient_substract_compute.SetTexture(gradient_substract_kernel, "velocityRW", velocity_tex_1);
 
-        }
-        else
-        {
-            gradient_substract_compute.SetTexture(gradient_substract_kernel, "source_velocity", velocity_tex_1);
-            gradient_substract_compute.SetTexture(gradient_substract_kernel, "velocityRW", velocity_tex_0);
+        gradient_substract_compute.SetTexture(gradient_substract_kernel, "source_velocity", velocity_tex_0);
+        gradient_substract_compute.SetTexture(gradient_substract_kernel, "velocityRW", velocity_tex_1);
 
-        }
 
-        if(using_pressure_0)
-        {
-            gradient_substract_compute.SetTexture(gradient_substract_kernel, "pressureR", pressure_tex_0);
-
-        }
-        else
-        {
-            gradient_substract_compute.SetTexture(gradient_substract_kernel, "pressureR", pressure_tex_1);
-
-        }
-
+        gradient_substract_compute.SetTexture(gradient_substract_kernel, "pressureR", pressure_tex_0);
         gradient_substract_compute.Dispatch(gradient_substract_kernel,dispatch_group_count,dispatch_group_count,1);
-        using_velocity_0 = !using_velocity_0;
+
+        Swap(ref velocity_tex_0, ref velocity_tex_1);
+
     }
 
     void AdvectVelocity()
     {
-        if(using_velocity_0)
-        {
-            //advect_compute.SetTexture(advect_kernel,"velocityR", velocity_tex_0);
-            advect_compute.SetTexture(advect_kernel,"source", velocity_tex_0);
-            advect_compute.SetTexture(advect_kernel,"target", velocity_tex_1);
-        }
-        else
-        {
-            //advect_compute.SetTexture(advect_kernel,"velocityR", velocity_tex_1);
-            advect_compute.SetTexture(advect_kernel,"source", velocity_tex_1);
-            advect_compute.SetTexture(advect_kernel,"target", velocity_tex_0);
 
-        }
-
+        advect_compute.SetTexture(advect_kernel,"source", velocity_tex_0);
+        advect_compute.SetTexture(advect_kernel,"target", velocity_tex_1);
 
         advect_compute.SetFloat("delta_time",Time.deltaTime);
         advect_compute.Dispatch(advect_kernel,dispatch_group_count,dispatch_group_count,1);
-        using_velocity_0 = !using_velocity_0;
+        Swap(ref velocity_tex_0, ref velocity_tex_1);
     }
 
     void CalculateDivergence()
     {
-        if(using_velocity_0)
-            calculate_divergence.SetTexture(calculate_divergence_kernel, "velocityR", velocity_tex_0);
-        else
-            calculate_divergence.SetTexture(calculate_divergence_kernel, "velocityR", velocity_tex_1);
 
+        calculate_divergence.SetTexture(calculate_divergence_kernel, "velocityR", velocity_tex_0);
 
         calculate_divergence.SetTexture(calculate_divergence_kernel, "pressureW", pressure_tex_0);
         calculate_divergence.SetTexture(calculate_divergence_kernel, "divergenceW", divergence_tex);
 
-        using_pressure_0 = true;
         calculate_divergence.Dispatch(calculate_divergence_kernel,dispatch_group_count,dispatch_group_count,1);
     }
 
@@ -175,12 +135,9 @@ public class FluidSim : MonoBehaviour {
         AdvectVelocity();
         if(Input.GetButtonDown("Jump"))
         {
-            if(using_velocity_0)
-                inject_compute.SetTexture(inject_velocity_kernel,"textureRW", velocity_tex_0);
-            else
-                inject_compute.SetTexture(inject_velocity_kernel,"textureRW", velocity_tex_1);
-
+            inject_compute.SetTexture(inject_velocity_kernel,"textureRW", velocity_tex_0);
             inject_compute.Dispatch(inject_velocity_kernel,dispatch_group_count,dispatch_group_count,1);
+
         }
 //        AdvectDensity();
 //        AddDensity();
@@ -198,24 +155,35 @@ public class FluidSim : MonoBehaviour {
         
         GradientSubstract();
 
+        debugger.UpdateGrid(velocity_tex_0,true);
 
-        if(using_velocity_0)
-            debugger.UpdateGrid(velocity_tex_0,true);
-        else
-            debugger.UpdateGrid(velocity_tex_1,true); 
-        
+       
+//        
+//
+        density_material.SetTexture("_Density", velocity_tex_0);
 
 
-        if(using_velocity_0)
-        {
-            density_material.SetTexture("_Density", velocity_tex_0);
-        }
-        else
-        {
-            density_material.SetTexture("_Density", velocity_tex_1);
-        }
+//        AddTemperature();
+//        debugger.UpdateGrid(temperature_tex_0,true);
+//        density_material.SetTexture("_Density", temperature_tex_0);
+
+
     }
 
+    void AddTemperature()
+    {
+        inject_compute.SetFloat("dt", Time.deltaTime);
+        inject_compute.SetTexture(add_temperature_kernel,"textureRW", temperature_tex_0);
+        inject_compute.Dispatch(add_temperature_kernel,dispatch_group_count,dispatch_group_count,1);
+        //Swap(ref temperature_tex_0,ref temperature_tex_1);
+
+    }
+    void Swap(ref RenderTexture read,ref RenderTexture written)
+    {
+        RenderTexture tmp = written;
+        written = read;
+        read = tmp;
+    }
     void SetupKernels()
     {
         inject_density_kernel   = inject_compute.FindKernel("inject_density");
@@ -224,11 +192,16 @@ public class FluidSim : MonoBehaviour {
         pressure_kernel         = pressure_compute.FindKernel("CSMain");
         add_density_kernel      = inject_compute.FindKernel("add_density");
         add_velocity_kernel     = inject_compute.FindKernel("add_velocity");
+        add_temperature_kernel  = inject_compute.FindKernel("add_temperature");
         calculate_divergence_kernel = calculate_divergence.FindKernel("CSMain");
         gradient_substract_kernel = gradient_substract_compute.FindKernel("CSMain");
 
     }
 
+//    void SwapTemperatureTextures()
+//    {
+//
+//    }
     void SwapDensityTextures()
     {
         if(using_density_0)
@@ -317,8 +290,8 @@ public class FluidSim : MonoBehaviour {
 
     void SetupDensityTex()
     {
-        density_tex_0 = new RenderTexture(texture_resolution,texture_resolution,0, RenderTextureFormat.ARGB32, RenderTextureReadWrite.Linear);
-        density_tex_1 = new RenderTexture(texture_resolution,texture_resolution,0, RenderTextureFormat.ARGB32, RenderTextureReadWrite.Linear);
+        density_tex_0 = new RenderTexture(texture_resolution,texture_resolution,0, RenderTextureFormat.ARGBFloat, RenderTextureReadWrite.Linear);
+        density_tex_1 = new RenderTexture(texture_resolution,texture_resolution,0, RenderTextureFormat.ARGBFloat, RenderTextureReadWrite.Linear);
         density_tex_0.wrapMode = TextureWrapMode.Clamp;
         density_tex_1.wrapMode = TextureWrapMode.Clamp;
         density_tex_0.enableRandomWrite = true;
@@ -330,6 +303,18 @@ public class FluidSim : MonoBehaviour {
 
     }
 
+    void SetupTemperatureTex()
+    {
+        temperature_tex_0 = new RenderTexture(texture_resolution,texture_resolution,0, RenderTextureFormat.ARGBFloat, RenderTextureReadWrite.Linear);
+        temperature_tex_1 = new RenderTexture(texture_resolution,texture_resolution,0, RenderTextureFormat.ARGBFloat, RenderTextureReadWrite.Linear);
+        temperature_tex_0.wrapMode = TextureWrapMode.Clamp;
+        temperature_tex_1.wrapMode = TextureWrapMode.Clamp;
+        temperature_tex_0.enableRandomWrite = true;
+        temperature_tex_1.enableRandomWrite = true;
+
+        temperature_tex_0.Create();
+        temperature_tex_1.Create();
+    }
     void SetupPressureTex()
     {
         pressure_tex_0 = new RenderTexture(texture_resolution,texture_resolution,0, RenderTextureFormat.ARGBFloat, RenderTextureReadWrite.Linear);
@@ -372,7 +357,8 @@ public class FluidSim : MonoBehaviour {
         velocity_tex_1.Release();
         pressure_tex_0.Release();
         pressure_tex_1.Release();
-
+        temperature_tex_0.Release();
+        temperature_tex_1.Release();
     }
 
 //    void OnGUI()
