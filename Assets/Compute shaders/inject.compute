@@ -8,7 +8,6 @@
 
 #include "fluid_utilities.cginc"
 
-
 RWTexture2D<float4> textureRW;
 
 Texture2D<float4> force_tex;
@@ -18,7 +17,10 @@ float2 old_mouse_pos;
 float2 mouse_pos;
 float dt;
 
-float ambient_temperature;
+float temperature_amount;
+float density_amount;
+
+
 
 NUMTHREADS
 void inject_density (uint3 id : SV_DispatchThreadID)
@@ -48,11 +50,12 @@ NUMTHREADS
 void add_density (uint3 id : SV_DispatchThreadID)
 {
 
-    float2 pos = ID_TO_UV(id.xy);
-    float density = 1 - distance(pos,mouse_pos)/0.1;
+    float2 pos = ID_TO_UV(id.xy) * 2 - 1;
+    float density = saturate(1-pow(length(pos)*4,2));
+    float current_temperature = textureRW[id.xy].x + density * dt * density_amount;
 
-    float current_density = textureRW[id.xy].x;
-    textureRW[id.xy] = float4(current_density + saturate(density * dt * 3),0,0,0);
+
+    textureRW[id.xy] = float4(min(current_temperature, 1),0,0,0);
 }
 
 NUMTHREADS
@@ -61,9 +64,11 @@ void add_temperature (uint3 id : SV_DispatchThreadID)
 
     float2 pos = ID_TO_UV(id.xy) * 2 - 1;
     float temperature = saturate(1-pow(length(pos)*4,2));
-    //float current_temperature = textureRW[id.xy].x;
-    //textureRW[id.xy] = float4(current_temperature + temperature * dt * 0.2,0,0,0);
-    textureRW[id.xy] = float4(temperature,0,0,0);
+    float current_temperature = textureRW[id.xy].x + temperature * dt * 0.2;
+
+
+    textureRW[id.xy] = float4(min(current_temperature, 1),0,0,0);
+    //textureRW[id.xy] = float4(temperature,0,0,0);
 }
 
 

@@ -1,0 +1,27 @@
+﻿
+
+#pragma kernel add_force
+
+#include "fluid_utilities.cginc"
+
+RWTexture2D<float4> velocityW;
+
+Texture2D<float4> temperatureR;
+Texture2D<float4> densityR;
+
+float ambient_temperature;
+float dt;
+
+float density_mass;
+float temperature_scale;
+
+NUMTHREADS
+void add_force (uint3 id : SV_DispatchThreadID)
+{
+	float2 up = float2(0,1) * dt;
+    float2 current_velocity     = velocityW[id.xy].xy;
+    float temperature_diff      = (temperatureR[id.xy].x - ambient_temperature) * temperature_scale;
+    float density_weight        = -density_mass * densityR[id.xy].x;
+
+    velocityW[id.xy] = float4(current_velocity + up * (density_weight  + temperature_diff), 0,0);
+}

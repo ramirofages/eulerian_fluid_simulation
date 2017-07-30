@@ -1,4 +1,4 @@
-#define GRID_SIZE 32.0
+#define GRID_SIZE 512.0
 #define NUMTHREADS [numthreads(32,32,1)]
 #define CELL_SIZE 1.0
 #define HALF_CELL_SIZE 0.5
