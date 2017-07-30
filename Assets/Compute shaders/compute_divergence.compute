@@ -11,21 +11,22 @@ void CSMain (uint3 id : SV_DispatchThreadID)
 {
 
     
-    float2 up       = velocityR[id.xy + uint2( 0, 1    )].xy;
-    float2 down     = velocityR[id.xy - uint2( 0, 1    )].xy;
-    float2 left     = velocityR[id.xy - uint2( 1, 0    )].xy;
-    float2 right    = velocityR[id.xy + uint2( 1, 0    )].xy;
+    float up       = velocityR[id.xy + uint2( 0, 1    )].y;
+    float down     = velocityR[id.xy - uint2( 0, 1    )].y;
+    float left     = velocityR[id.xy - uint2( 1, 0    )].x;
+    float right    = velocityR[id.xy + uint2( 1, 0    )].x;
 
-    if((id.x + 1)> GRID_SIZE-1)
-        right.x = 0.0;
-    if((id.x - 1)< 1)
-        left.x = 0.0;
-    if((id.y + 1)> GRID_SIZE-1)
-        up.y = 0.0;
-    if((id.y - 1)< 1)
-        down.y = 0.0;
 
-    divergenceW[id.xy] = float4(((right.x - left.x) + (up.y - down.y)) * HALF_CELL_SIZE,0,0,0);
+    if(is_boundary(id.xy + uint2 (1,0)))
+        right = 0;
+    if(is_boundary(id.xy - uint2 (1,0)))
+        left = 0;
+    if(is_boundary(id.xy + uint2 (0,1)))
+        up = 0;
+    if(is_boundary(id.xy - uint2 (0,1)))
+        down = 0;
+
+    divergenceW[id.xy] = float4(((right - left) + (up - down)) * HALF_CELL_SIZE,0,0,0);
     pressureW[id.xy] = float4(0, 0, 0, 0);
 
 }

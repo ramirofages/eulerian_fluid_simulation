@@ -15,16 +15,15 @@ void CSMain (uint3 id : SV_DispatchThreadID)
 
 
 
-    float up       = pressureR[uint2(id.x, min(id.y + 1, GRID_SIZE -1))].x; 
-    float down     = pressureR[uint2(id.x, max(id.y - 1, 1))].x;
-    float left     = pressureR[uint2(max(id.x -1, 1)            , id.y)].x;
-    float right    = pressureR[uint2(min(id.x +1, GRID_SIZE -1) , id.y)].x;
+    float up       = pressureR[id.xy + uint2( 0, 1    )].x; 
+    float down     = pressureR[id.xy - uint2( 0, 1    )].x;
+    float left     = pressureR[id.xy - uint2( 1, 0    )].x;
+    float right    = pressureR[id.xy + uint2( 1, 0    )].x;
+
+    float center   = pressureR[id.xy].x;
 
 
-
-
-    float alpha = -(CELL_SIZE * CELL_SIZE);
-    alpha = -1;
+    float alpha = -1;
     float beta = 0.25;
 
     float divergence = divergenceR[id.xy].x;

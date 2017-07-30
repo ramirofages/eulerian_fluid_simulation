@@ -25,5 +25,5 @@ void CSMain (uint3 id : SV_DispatchThreadID)
 
     float2 backwards_pos = id.xy - velocity * delta_time;
 	float2 new_vel = source.SampleLevel(LinearClamp, (backwards_pos+0.5)/GRID_SIZE,0).xy;
-    target[id.xy] = float4(new_vel * 0.999,0,0);
+    target[id.xy] = float4(new_vel * 0.995,0,0);
 }

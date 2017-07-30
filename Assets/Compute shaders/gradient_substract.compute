@@ -18,14 +18,14 @@ void CSMain (uint3 id : SV_DispatchThreadID)
     float right    = pressureR[id.xy + uint2( 1,0    )].x;
     float center   = pressureR[id.xy].x;
 
-    if((id.x + 1)> GRID_SIZE-1)
-        right = center;
-    if((id.x - 1)< 1)
-        left = center;
-    if((id.y + 1)> GRID_SIZE-1)
-        up = center;
-    if((id.y - 1)< 1)
-        down = center;
+    if(is_boundary(id.xy + uint2 (1,0)))
+        right   = center;
+    if(is_boundary(id.xy - uint2 (1,0)))
+        left    = center;
+    if(is_boundary(id.xy + uint2 (0,1)))
+        up      = center;
+    if(is_boundary(id.xy - uint2 (0,1)))
+        down    = center;
 
 
     float2 velocity = source_velocity[id.xy].xy;

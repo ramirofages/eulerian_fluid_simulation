@@ -3,7 +3,7 @@
 #pragma kernel add_density
 #pragma kernel add_velocity
 #pragma kernel add_temperature
-
+#pragma kernel add_mouse_density
 
 
 #include "fluid_utilities.cginc"
@@ -13,7 +13,6 @@ RWTexture2D<float4> textureRW;
 Texture2D<float4> force_tex;
 
 SamplerState LinearClamp;
-float2 old_mouse_pos;
 float2 mouse_pos;
 float dt;
 
@@ -59,15 +58,25 @@ void add_density (uint3 id : SV_DispatchThreadID)
 }
 
 NUMTHREADS
+void add_mouse_density (uint3 id : SV_DispatchThreadID)
+{
+    float2 pos = ID_TO_UV(id.xy);
+    float density = saturate(1 - distance(pos,mouse_pos)/0.1);
+
+    float current_density = textureRW[id.xy].x + density * dt * density_amount;
+    textureRW[id.xy] = float4(min(current_density, 1),0,0,0);
+}
+
+NUMTHREADS
 void add_temperature (uint3 id : SV_DispatchThreadID)
 {
 
     float2 pos = ID_TO_UV(id.xy) * 2 - 1;
     float temperature = saturate(1-pow(length(pos)*4,2));
-    float current_temperature = textureRW[id.xy].x + temperature * dt * 0.2;
+    float current_temperature = textureRW[id.xy].x + temperature * dt * temperature_amount;
 
 
-    textureRW[id.xy] = float4(min(current_temperature, 1),0,0,0);
+    textureRW[id.xy] = float4(current_temperature,0,0,0);
     //textureRW[id.xy] = float4(temperature,0,0,0);
 }
 

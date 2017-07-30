@@ -18,6 +18,9 @@ public class FluidSim : MonoBehaviour {
     public float temp_scale = 1f;
 
     [Range(0f,10f)]
+    public float temperature_amount = 0.2f;
+
+    [Range(0f,10f)]
     public float density_amount = 3f;
 
 
@@ -49,14 +52,14 @@ public class FluidSim : MonoBehaviour {
     RenderTexture temperature_tex_0;
     RenderTexture temperature_tex_1;
 
-    RenderTexture debug_texture;
 
-    int texture_resolution = 512;
-    int dispatch_group_count = 16;
+    int texture_resolution = 256;
+    int dispatch_group_count;
 
     FluidDebugger debugger;
     void Start()
     {
+        dispatch_group_count = texture_resolution / 32;
         SetupDensityTex();
         SetupTemperatureTex();
         SetupVelocityTex();
@@ -130,10 +133,11 @@ public class FluidSim : MonoBehaviour {
     {
 
         AddTemperature();
-        AddDensity();
-
+        //AddDensity();
+        AddDensity_mouse();
         force_addition.SetFloat("density_mass", mass_density);
         force_addition.SetFloat("ambient_temperature", ambient_temp);
+        force_addition.SetFloat("temperature_amount", temperature_amount);
         force_addition.SetFloat("temperature_scale", temp_scale);
         force_addition.SetFloat("dt", Time.deltaTime);
         force_addition.SetTexture(force_addition_kernel, "velocityW", velocity_tex_0);
@@ -146,6 +150,7 @@ public class FluidSim : MonoBehaviour {
 
     void Update()
     {
+
         Advect(ref density_tex_0, ref density_tex_1);
         Advect(ref temperature_tex_0, ref temperature_tex_1);
         Advect(ref velocity_tex_0, ref velocity_tex_1);
@@ -155,10 +160,9 @@ public class FluidSim : MonoBehaviour {
         CalculateDivergence();
         SolvePressure();
         GradientSubstract();
-
-
-        //debugger.UpdateGrid(density_tex_0,true);
-        debug_texture = density_tex_0;
+//
+//
+//        debugger.UpdateGrid(temperature_tex_0,true);
 
     }
 
@@ -167,6 +171,8 @@ public class FluidSim : MonoBehaviour {
     void AddTemperature()
     {
         inject_compute.SetFloat("dt", Time.deltaTime);
+        inject_compute.SetFloat("temperature_amount", temperature_amount);
+
         inject_compute.SetTexture(add_temperature_kernel,"textureRW", temperature_tex_0);
         inject_compute.Dispatch(add_temperature_kernel,dispatch_group_count,dispatch_group_count,1);
     }
@@ -183,7 +189,7 @@ public class FluidSim : MonoBehaviour {
 
         advect_kernel           = advect_compute.FindKernel("CSMain");
         pressure_kernel         = pressure_compute.FindKernel("CSMain");
-        add_density_kernel      = inject_compute.FindKernel("add_density");
+        add_density_kernel      = inject_compute.FindKernel("add_mouse_density");
         add_velocity_kernel     = inject_compute.FindKernel("add_velocity");
         add_temperature_kernel  = inject_compute.FindKernel("add_temperature");
         calculate_divergence_kernel = calculate_divergence.FindKernel("CSMain");
@@ -191,30 +197,21 @@ public class FluidSim : MonoBehaviour {
         force_addition_kernel   = force_addition.FindKernel("add_force");
     }
 
-
     void AddDensity_mouse()
     {
         Vector2 mouse_pos = new Vector2(Input.mousePosition.x, Input.mousePosition.y);
         mouse_pos.y /= (float)Screen.height;
         mouse_pos.x /= (float)Screen.width;
 
-        if(Input.GetMouseButton(0))
+        if(Input.GetMouseButton(0) || true)
         {
-
             inject_compute.SetTexture(add_density_kernel,"textureRW", density_tex_0);
-
-
             inject_compute.SetVector("mouse_pos", mouse_pos);
+            inject_compute.SetFloat("density_amount", density_amount);
+
             inject_compute.SetFloat("dt", Time.deltaTime);
             inject_compute.Dispatch(add_density_kernel,dispatch_group_count,dispatch_group_count,1);
-
-            inject_compute.SetTexture(add_velocity_kernel,"textureRW", velocity_tex_0);
-
-
-            inject_compute.Dispatch(add_velocity_kernel,dispatch_group_count,dispatch_group_count,1);
-
         }
-        inject_compute.SetVector("old_mouse_pos", mouse_pos);
 
     }
 
@@ -293,7 +290,9 @@ public class FluidSim : MonoBehaviour {
 
     void OnGUI()
     {
-        GUI.DrawTexture(new Rect(0,0,300,300), debug_texture, ScaleMode.ScaleToFit, false);
+        GUI.DrawTexture(new Rect(0,0,300,300), density_tex_0, ScaleMode.ScaleToFit, false);
+        GUI.DrawTexture(new Rect(300,0,300,300), velocity_tex_0, ScaleMode.ScaleToFit, false);
+        GUI.DrawTexture(new Rect(600,0,300,300), temperature_tex_0, ScaleMode.ScaleToFit, false);
     }
 
 }
