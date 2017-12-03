@@ -38,6 +38,8 @@ public class FluidSim : MonoBehaviour {
 
 
     public Material density_material;
+    public MeshRenderer visualize_density_renderer;
+
     RenderTexture density_tex_0;
     RenderTexture density_tex_1;
 
@@ -57,6 +59,10 @@ public class FluidSim : MonoBehaviour {
     int dispatch_group_count;
 
     FluidDebugger debugger;
+
+    public bool debug_ui;
+    public bool visualize_quad;
+
     void Start()
     {
         dispatch_group_count = texture_resolution / 32;
@@ -65,7 +71,7 @@ public class FluidSim : MonoBehaviour {
         SetupVelocityTex();
         SetupPressureTex();
         SetupKernels();
-        //AddDensity();
+        //AddDensity(); 
 
         debugger = GetComponent<FluidDebugger>();
     }
@@ -134,7 +140,8 @@ public class FluidSim : MonoBehaviour {
 
         AddTemperature();
         //AddDensity();
-        AddDensity_mouse();
+        AddDensity_mouse(); // usamos el mouse para agregar
+
         force_addition.SetFloat("density_mass", mass_density);
         force_addition.SetFloat("ambient_temperature", ambient_temp);
         force_addition.SetFloat("temperature_amount", temperature_amount);
@@ -160,12 +167,17 @@ public class FluidSim : MonoBehaviour {
         CalculateDivergence();
         SolvePressure();
         GradientSubstract();
-//
-//
-//        debugger.UpdateGrid(temperature_tex_0,true);
+
+        Visualize(density_tex_0);
+
+        debugger.UpdateGrid(density_tex_0);
 
     }
 
+    void Visualize(RenderTexture tx)
+    {
+        visualize_density_renderer.material.SetTexture("_MainTex", tx);
+    }
 
 
     void AddTemperature()
@@ -290,9 +302,21 @@ public class FluidSim : MonoBehaviour {
 
     void OnGUI()
     {
-        GUI.DrawTexture(new Rect(0,0,300,300), density_tex_0, ScaleMode.ScaleToFit, false);
-        GUI.DrawTexture(new Rect(300,0,300,300), velocity_tex_0, ScaleMode.ScaleToFit, false);
-        GUI.DrawTexture(new Rect(600,0,300,300), temperature_tex_0, ScaleMode.ScaleToFit, false);
+        debug_ui = GUI.Toggle(new Rect(0, Screen.height-50,100,50),debug_ui, "Display UI");
+        visualize_quad = GUI.Toggle(new Rect(0, Screen.height-80,100,50),visualize_quad, "Display quad");
+
+        visualize_density_renderer.enabled = visualize_quad;
+
+        if(!debug_ui) return;
+
+        GUI.DrawTexture(new Rect(0,0,400,400), density_tex_0, ScaleMode.ScaleToFit, false);
+        GUI.Label(new Rect(180,420, 150,50), "     Densidad\n(mover el mouse)");
+        GUI.DrawTexture(new Rect(400,0,400,400), velocity_tex_0, ScaleMode.ScaleToFit, false);
+        GUI.Label(new Rect(580,420, 150,50), "Velocidad");
+
+        GUI.DrawTexture(new Rect(800,0,400,400), temperature_tex_0, ScaleMode.ScaleToFit, false);
+        GUI.Label(new Rect(980,420, 150,50), "Temperatura");
+
     }
 
 }

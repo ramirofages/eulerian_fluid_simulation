@@ -1,4 +1,4 @@
-﻿Shader "Unlit/test"
+﻿Shader "Unlit/visualize"
 {
 	Properties
 	{
@@ -6,16 +6,18 @@
 	}
 	SubShader
 	{
-		Tags { "RenderType"="Opaque" }
+		Tags { "RenderType"="Transparent" "Queue"="Transparent"}
 		LOD 100
 
 		Pass
 		{
+
+            Blend SrcAlpha OneMinusSrcAlpha
+            ZWrite off
+
 			CGPROGRAM
 			#pragma vertex vert
 			#pragma fragment frag
-			// make fog work
-			#pragma multi_compile_fog
 			
 			#include "UnityCG.cginc"
 
@@ -29,30 +31,22 @@
 			{
 				float2 uv : TEXCOORD0;
 				float4 vertex : SV_POSITION;
-                float2 screen : TEXCOORD1;
 			};
 
 			sampler2D _MainTex;
 			float4 _MainTex_ST;
-            sampler2D _Density;
 			
 			v2f vert (appdata v)
 			{
 				v2f o;
 				o.vertex = UnityObjectToClipPos(v.vertex);
 				o.uv = TRANSFORM_TEX(v.uv, _MainTex);
-                o.screen = UnityObjectToClipPos(v.vertex).xy;
-				UNITY_TRANSFER_FOG(o,o.vertex);
 				return o;
 			}
 			
-			fixed3 frag (v2f i) : SV_Target
+			fixed4 frag (v2f i) : SV_Target
 			{
-//                float density = tex2D(_Density, i.uv).r;
-//                return fixed3(density, density, density);
-
-                float2 density = tex2D(_Density, i.uv).rg;
-                return fixed3(density,0);
+				return tex2D(_MainTex, i.uv).r;
 			}
 			ENDCG
 		}

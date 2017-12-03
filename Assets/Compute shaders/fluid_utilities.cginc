@@ -15,9 +15,9 @@ float2 ID_TO_UV(uint2 id)
 
 bool is_boundary(uint2 id)
 {
-    if(id.x < 1 || id.x > GRID_SIZE-1)
+    if(id.x < 0 || id.x > GRID_SIZE-1)
         return true;
-    if(id.y < 1 || id.y > GRID_SIZE-1)
+    if(id.y < 0 || id.y > GRID_SIZE-1)
         return true;
 
     return false;

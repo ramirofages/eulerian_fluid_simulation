@@ -18,18 +18,32 @@ void CSMain (uint3 id : SV_DispatchThreadID)
     float right    = pressureR[id.xy + uint2( 1,0    )].x;
     float center   = pressureR[id.xy].x;
 
-    if(is_boundary(id.xy + uint2 (1,0)))
-        right   = center;
-    if(is_boundary(id.xy - uint2 (1,0)))
-        left    = center;
-    if(is_boundary(id.xy + uint2 (0,1)))
-        up      = center;
-    if(is_boundary(id.xy - uint2 (0,1)))
-        down    = center;
+    float2 mask = float2(1,1);
+
+    if(is_boundary(id.xy + uint2 (1,0))){
+    	right   = center;
+    	mask.x	= 0;
+    }
+        
+    if(is_boundary(id.xy - uint2 (1,0))){
+    	left    = center;
+    	mask.x	= 0;
+    }
+        
+    if(is_boundary(id.xy + uint2 (0,1))){
+    	up      = center;
+    	mask.y	= 0;
+    }
+        
+    if(is_boundary(id.xy - uint2 (0,1))){
+    	down    = center;
+    	mask.y	= 0;
+    }
+        
 
 
     float2 velocity = source_velocity[id.xy].xy;
 
     float2 new_vel = velocity - float2(right - left, up - down) * 0.5;
-    velocityRW[id.xy] = float4(new_vel, 0,0);
+    velocityRW[id.xy] = float4(new_vel * mask, 0,0);
 }
