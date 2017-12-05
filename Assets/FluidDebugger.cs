@@ -11,6 +11,9 @@ public class FluidDebugger : MonoBehaviour {
     public Material test;
     public bool is_disabled;
     MaterialPropertyBlock prop;
+
+    bool mesh_enabled = false;
+
 	void Awake () 
     {
         if(is_disabled) return;
@@ -29,10 +32,26 @@ public class FluidDebugger : MonoBehaviour {
                 prop.SetVector("_Index", new Vector2(i,j));
                 cubes[i][j] = GameObject.Instantiate<GameObject>(cube, new Vector3(i,0,j), Quaternion.identity).transform;
                 cubes[i][j].GetComponent<MeshRenderer>().SetPropertyBlock(prop);
+                cubes[i][j].GetComponent<MeshRenderer>().enabled = false;
             }
         }
 	}
 
+
+    void Update()
+    {
+        if(Input.GetButtonDown("Jump"))
+        {
+            for(int i=0; i< texture_resolution; i++)
+            {
+                for(int j=0; j< texture_resolution; j++)
+                {
+                    cubes[i][j].GetComponent<MeshRenderer>().enabled = !mesh_enabled;
+                }
+            }
+            mesh_enabled = !mesh_enabled;
+        }
+    }
     public void UpdateGrid(RenderTexture source)
     {
         if(is_disabled) return;

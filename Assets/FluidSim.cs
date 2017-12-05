@@ -60,8 +60,7 @@ public class FluidSim : MonoBehaviour {
 
     FluidDebugger debugger;
 
-    public bool debug_ui;
-    public bool visualize_quad;
+
 
     void Start()
     {
@@ -170,7 +169,7 @@ public class FluidSim : MonoBehaviour {
 
         Visualize(density_tex_0);
 
-        debugger.UpdateGrid(density_tex_0);
+        debugger.UpdateGrid(pressure_tex_0);
 
     }
 
@@ -299,23 +298,39 @@ public class FluidSim : MonoBehaviour {
         temperature_tex_1.Release();
     }
 
-
+    public bool debug_ui;
+    public bool visualize_quad;
+    bool visualize_vel;
+    bool visualize_temp;
+    bool visualize_density;
     void OnGUI()
     {
-        debug_ui = GUI.Toggle(new Rect(0, Screen.height-50,100,50),debug_ui, "Display UI");
-        visualize_quad = GUI.Toggle(new Rect(0, Screen.height-80,100,50),visualize_quad, "Display quad");
+        //debug_ui = GUI.Toggle(new Rect(0, Screen.height-50,100,50),debug_ui, "Display UI");
+        visualize_quad = GUI.Toggle(new Rect(0, Screen.height-80,200,50),visualize_quad, "Display quad");
+        visualize_vel = GUI.Toggle(new Rect(0, Screen.height-110,200,50),visualize_vel, "Display velocity");
+        visualize_temp = GUI.Toggle(new Rect(0, Screen.height-140,200,50),visualize_temp, "Display temperature");
+        visualize_density = GUI.Toggle(new Rect(0, Screen.height-170,200,50),visualize_density, "Display density");
 
         visualize_density_renderer.enabled = visualize_quad;
 
-        if(!debug_ui) return;
 
-        GUI.DrawTexture(new Rect(0,0,400,400), density_tex_0, ScaleMode.ScaleToFit, false);
-        GUI.Label(new Rect(180,420, 150,50), "     Densidad\n(mover el mouse)");
-        GUI.DrawTexture(new Rect(400,0,400,400), velocity_tex_0, ScaleMode.ScaleToFit, false);
-        GUI.Label(new Rect(580,420, 150,50), "Velocidad");
+        if(visualize_density)
+        {
+            GUI.DrawTexture(new Rect(0,0,400,400), density_tex_0, ScaleMode.ScaleToFit, false);
+            GUI.Label(new Rect(180,420, 150,50), "     Densidad\n(mover el mouse)");
+        }
+        if(visualize_vel)
+        {
+            GUI.DrawTexture(new Rect(400,0,400,400), velocity_tex_0, ScaleMode.ScaleToFit, false);
+            GUI.Label(new Rect(580,420, 150,50), "Velocidad");
+        }
+        if(visualize_temp)
+        {
+            GUI.DrawTexture(new Rect(800,0,400,400), temperature_tex_0, ScaleMode.ScaleToFit, false);
+            GUI.Label(new Rect(980,420, 150,50), "Temperatura");
+        }
 
-        GUI.DrawTexture(new Rect(800,0,400,400), temperature_tex_0, ScaleMode.ScaleToFit, false);
-        GUI.Label(new Rect(980,420, 150,50), "Temperatura");
+
 
     }
 
